@@ -5,6 +5,7 @@ import { txt, bool, dataISO, paginacao, like, registrarAcao } from '../../lib/ut
 import { descartarUploads } from '../../lib/associado.js';
 import { ORIGENS, TIPOS_COMUNICADO } from '../comunicados.js';
 import { hojeISO } from '../../lib/auth.js';
+import { avisarComunicado } from '../../lib/avisos.js';
 
 const router = express.Router();
 
@@ -58,6 +59,7 @@ router.post('/', uploadComunicado.single('arquivo'), async (req, res) => {
   if (req.file) Object.assign(d, { arquivo: `comunicados/${req.file.filename}`, arquivo_nome: req.file.originalname.slice(0, 255) });
   const [r] = await pool.query('INSERT INTO comunicados SET ?', [{ ...d, created_by: req.admin.id }]);
   await registrarAcao(req.admin.id, 'publicar', 'comunicado', r.insertId, d.titulo);
+  if (req.body.avisar_associados === 'true' && d.publicado) avisarComunicado(r.insertId);
   res.status(201).json({ id: r.insertId });
 });
 
@@ -72,6 +74,8 @@ router.put('/:id', uploadComunicado.single('arquivo'), async (req, res) => {
   await pool.query('UPDATE comunicados SET ? WHERE id = ?', [d, req.params.id]);
   if (trocar) removerArquivo(atual.arquivo, true);
   await registrarAcao(req.admin.id, 'editar', 'comunicado', Number(req.params.id), d.titulo);
+  // A chave por associado impede que quem já recebeu receba de novo
+  if (req.body.avisar_associados === 'true' && d.publicado) avisarComunicado(Number(req.params.id));
   res.json({ ok: true });
 });
 

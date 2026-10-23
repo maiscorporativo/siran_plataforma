@@ -13,6 +13,8 @@ import boletosRouter from './routes/boletos.js';
 import comunicadosRouter from './routes/comunicados.js';
 import publicoRouter from './routes/publico.js';
 import adminRouter from './routes/admin/index.js';
+import { agendarLembretes } from './lib/avisos.js';
+import { statusCanais } from './lib/notificacoes.js';
 
 dotenv.config({ quiet: true });
 
@@ -76,7 +78,11 @@ try {
   console.error('❌ Falha ao preparar o banco:', err.message);
 }
 
+agendarLembretes();
+
 app.listen(PORT, () => {
+  const c = statusCanais();
+  console.log(`   Envios:   e-mail ${c.email ? '✔' : '✘'} · WhatsApp ${c.whatsapp ? `✔ (${c.instancia})` : '✘'} · APP_URL ${c.app_url || '✘'}`);
   console.log(`\n🌱 SIRAN Plataforma rodando em http://localhost:${PORT}`);
   console.log(`   Ambiente: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   Banco:    ${process.env.DB_NAME || 'siran_plataforma'} @ ${process.env.DB_HOST || 'localhost'}\n`);

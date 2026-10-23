@@ -3,6 +3,7 @@ import pool, { transaction } from '../../db.js';
 import { hojeISO } from '../../lib/auth.js';
 import { txt, addMeses, configuracoes, registrarAcao } from '../../lib/util.js';
 import { CAMPOS_EDITAVEIS, TIPOS_DOCUMENTO } from '../../lib/associado.js';
+import { avisarRecredenciamento } from '../../lib/avisos.js';
 
 const router = express.Router();
 
@@ -68,6 +69,7 @@ router.post('/:id/decisao', async (req, res) => {
       [decisao, resposta, req.admin.id, validadeNova, r.id]);
   });
   await registrarAcao(req.admin.id, `recredenciamento:${decisao}`, 'associado', r.associado_id, resposta);
+  avisarRecredenciamento(r.associado_id, decisao, resposta, validadeNova);
   res.json({ ok: true, validade_nova: validadeNova });
 });
 

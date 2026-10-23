@@ -9,6 +9,10 @@ import Entrar from './pages/public/Entrar'
 const Cadastro = lazy(() => import('./pages/public/Cadastro'))
 const Validar = lazy(() => import('./pages/public/Validar'))
 const AdminEntrar = lazy(() => import('./pages/public/AdminEntrar'))
+const RecuperarAssociado = lazy(() => import('./pages/public/RecuperarSenha').then(m => ({ default: m.RecuperarSenhaAssociado })))
+const RecuperarAdmin = lazy(() => import('./pages/public/RecuperarSenha').then(m => ({ default: m.RecuperarSenhaAdmin })))
+const RedefinirAssociado = lazy(() => import('./pages/public/RedefinirSenha').then(m => ({ default: m.RedefinirSenhaAssociado })))
+const RedefinirAdmin = lazy(() => import('./pages/public/RedefinirSenha').then(m => ({ default: m.RedefinirSenhaAdmin })))
 
 const Inicio = lazy(() => import('./pages/app/Inicio'))
 const Classificados = lazy(() => import('./pages/app/Classificados'))
@@ -46,6 +50,10 @@ export default function App() {
               <Route path="/entrar" element={<Entrar />} />
               <Route path="/associe-se" element={<Cadastro />} />
               <Route path="/validar/:codigo" element={<Validar />} />
+              <Route path="/recuperar-senha" element={<RecuperarAssociado />} />
+              <Route path="/redefinir-senha" element={<RedefinirAssociado />} />
+              <Route path="/admin/recuperar-senha" element={<RecuperarAdmin />} />
+              <Route path="/admin/redefinir-senha" element={<RedefinirAdmin />} />
 
               <Route path="/app" element={<AppLayout />}>
                 <Route index element={<Inicio />} />

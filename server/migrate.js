@@ -43,7 +43,17 @@ export const CONFIG_PADRAO = {
   whatsapp_sindicato: '551836077826',
   telefone_sindicato: '(18) 3607-7826',
   email_sindicato: 'contato@siran.com.br',
+  // E-mails da equipe avisados sobre novos pedidos de filiação, recredenciamentos e anúncios
+  notif_equipe_emails: '',
+  // Lembrete de boleto: quantos dias antes do vencimento
+  lembrete_boleto_dias: '3',
 };
+
+/* Colunas acrescentadas depois da primeira versão (bancos já existentes) */
+const COLUNAS_NOVAS = [
+  ['associados', 'aceita_whatsapp', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER trocar_senha'],
+  ['associados', 'aceita_email', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER aceita_whatsapp'],
+];
 
 /* Separa o schema em comandos — o arquivo não usa ';' dentro de valores */
 function statements(sql) {
@@ -59,6 +69,15 @@ function statements(sql) {
 export async function migrate({ log = console.log } = {}) {
   const sql = fs.readFileSync(join(__dirname, 'schema.sql'), 'utf8');
   for (const stmt of statements(sql)) await pool.query(stmt);
+  for (const [tabela, coluna, def] of COLUNAS_NOVAS) {
+    const [[{ c }]] = await pool.query(
+      'SELECT COUNT(*) AS c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+      [tabela, coluna]);
+    if (!c) {
+      await pool.query(`ALTER TABLE \`${tabela}\` ADD COLUMN \`${coluna}\` ${def}`);
+      log(`✅ Coluna ${tabela}.${coluna} criada`);
+    }
+  }
 
   const seedCats = async (escopo, lista) => {
     const [[{ c }]] = await pool.query('SELECT COUNT(*) AS c FROM categorias WHERE escopo = ?', [escopo]);
@@ -94,6 +113,7 @@ export async function migrate({ log = console.log } = {}) {
   }
 
   await pool.query('DELETE FROM sessoes WHERE expires_at < NOW()');
+  await pool.query('DELETE FROM senha_tokens WHERE expires_at < NOW() - INTERVAL 7 DAY');
 }
 
 /* Uso direto: `npm run migrate` — cria o banco local se ainda não existir */

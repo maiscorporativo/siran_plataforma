@@ -4,6 +4,8 @@ import pool from '../../db.js';
 import { requireAdmin, requireMaster, gerarSenhaProvisoria, encerrarSessoesDoUsuario } from '../../lib/auth.js';
 import { txt, configuracoes, limparCacheConfig, registrarAcao } from '../../lib/util.js';
 import { CONFIG_PADRAO } from '../../migrate.js';
+import { statusCanais, diagnosticar, enviarTeste } from '../../lib/notificacoes.js';
+import { enviarLembretes } from '../../lib/avisos.js';
 import associados, { contarVencendo } from './associados.js';
 import recredenciamentos from './recredenciamentos.js';
 import classificados from './classificados.js';
@@ -73,6 +75,29 @@ router.put('/configuracoes', requireMaster, async (req, res) => {
   limparCacheConfig();
   await registrarAcao(req.admin.id, 'configuracoes', 'sistema', null);
   res.json(await configuracoes());
+});
+
+/* ── Envios automáticos: situação dos canais, teste e histórico ── */
+router.get('/notificacoes', async (req, res) => {
+  const [log] = await pool.query(
+    `SELECT n.id, n.evento, n.canal, n.destino, n.status, n.erro, n.created_at, n.enviado_em, a.nome
+       FROM notificacoes_log n LEFT JOIN associados a ON a.id = n.associado_id
+      ORDER BY n.id DESC LIMIT 100`);
+  const [[resumo]] = await pool.query(
+    `SELECT SUM(status = 'enviado') AS enviados, SUM(status = 'falha') AS falhas, SUM(status = 'pendente') AS pendentes
+       FROM notificacoes_log WHERE created_at >= NOW() - INTERVAL 30 DAY`);
+  res.json({ canais: statusCanais(), diagnostico: req.query.diagnostico === '1' ? await diagnosticar() : null, resumo, log });
+});
+
+router.post('/notificacoes/teste', requireMaster, async (req, res) => {
+  const email = txt(req.body.email, 160);
+  const whatsapp = txt(req.body.whatsapp, 20);
+  if (!email && !whatsapp) return res.status(400).json({ error: 'Informe um e-mail ou WhatsApp.' });
+  res.json(await enviarTeste({ email, whatsapp }));
+});
+
+router.post('/notificacoes/lembretes', requireMaster, async (_req, res) => {
+  res.json({ enfileirados: await enviarLembretes() });
 });
 
 /* ── Usuários da equipe (somente master) ── */

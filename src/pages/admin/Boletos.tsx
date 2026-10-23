@@ -4,7 +4,7 @@ import { CheckCircle2, FileStack, FileText, FileUp, MoreHorizontal, Plus, Receip
 import { abrirArquivo, api, formData, qs } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { competencia, data, mascaraDocumento, moeda } from '../../lib/format'
-import { AreaTexto, Aviso, Botao, Cabecalho, Carregando, Cartao, Entrada, Erro, Modal, Paginacao, Vazio, useConfirmacao, useToast } from '../../components/ui'
+import { AreaTexto, Aviso, Botao, Cabecalho, Carregando, Cartao, Entrada, Erro, Marcador, Modal, Paginacao, Vazio, useConfirmacao, useToast } from '../../components/ui'
 import { StatusBoleto } from '../../components/Status'
 import type { Associado, Boleto, Paginado } from '../../lib/tipos'
 
@@ -121,6 +121,7 @@ function LancarBoleto({ onFechar }: { onFechar: () => void }) {
   const [assoc, setAssoc] = useState<Associado | null>(null)
   const { dados: resultados } = useApi<Paginado<Associado>>(busca.length >= 3 && !assoc ? `/admin/associados${qs({ q: busca, por_pagina: 6 })}` : null)
   const [d, setD] = useState({ competencia: mesAtual(), vencimento: '', valor: '', linha_digitavel: '', pix_copia_cola: '' })
+  const [avisar, setAvisar] = useState(true)
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
@@ -133,7 +134,7 @@ function LancarBoleto({ onFechar }: { onFechar: () => void }) {
     setErro(null)
     setEnviando(true)
     try {
-      await api('/admin/boletos', { method: 'POST', form: formData({ ...d, associado_id: String(assoc.id), arquivo }) })
+      await api('/admin/boletos', { method: 'POST', form: formData({ ...d, associado_id: String(assoc.id), arquivo, avisar }) })
       toast('Boleto lançado.')
       onFechar()
     } catch (err) {
@@ -172,6 +173,7 @@ function LancarBoleto({ onFechar }: { onFechar: () => void }) {
           <p className="mb-1.5 text-sm font-medium text-stone-700">PDF do boleto</p>
           <input type="file" accept="application/pdf" onChange={e => setArquivo(e.target.files?.[0] || null)} className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-siran-100 file:px-4 file:py-2 file:font-medium file:text-siran-900" />
         </div>
+        <Marcador rotulo="Avisar o associado por WhatsApp e e-mail" checked={avisar} onChange={setAvisar} />
         {erro && <Aviso tom="vermelho">{erro}</Aviso>}
         <Botao type="submit" carregando={enviando} className="w-full">Lançar</Botao>
       </form>
@@ -183,6 +185,7 @@ type ResultadoLote = { criados: { arquivo: string; nome: string }[]; substituido
 
 function Lote({ onFechar }: { onFechar: () => void }) {
   const [d, setD] = useState({ competencia: mesAtual(), vencimento: '', valor: '', descricao: '' })
+  const [avisar, setAvisar] = useState(true)
   const [arquivos, setArquivos] = useState<File[]>([])
   const [resultado, setResultado] = useState<ResultadoLote | null>(null)
   const [erro, setErro] = useState<string | null>(null)
@@ -195,7 +198,7 @@ function Lote({ onFechar }: { onFechar: () => void }) {
     setErro(null)
     setEnviando(true)
     try {
-      const form = formData(d)
+      const form = formData({ ...d, avisar })
       arquivos.forEach(a => form.append('arquivos', a))
       setResultado(await api('/admin/boletos/lote', { method: 'POST', form }))
     } catch (err) {
@@ -241,6 +244,7 @@ function Lote({ onFechar }: { onFechar: () => void }) {
             <span className="text-xs text-stone-500">Até 500 arquivos por envio</span>
             <input type="file" accept="application/pdf" multiple hidden onChange={e => setArquivos(Array.from(e.target.files || []))} />
           </label>
+          <Marcador rotulo="Avisar cada associado por WhatsApp e e-mail" descricao="Os avisos saem um de cada vez, com intervalo, para proteger o número do sindicato." checked={avisar} onChange={setAvisar} />
           {erro && <Aviso tom="vermelho">{erro}</Aviso>}
           <Botao type="submit" carregando={enviando} className="w-full">Enviar boletos</Botao>
         </form>

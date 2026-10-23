@@ -4,6 +4,7 @@ import { requireAssociado, requireAssociadoAtivo, requireAssociadoRegular } from
 import { uploadFotoAnuncio, removerArquivo, urlPublica } from '../lib/storage.js';
 import { txt, dinheiro, soDigitos, configuracoes, paginacao, like } from '../lib/util.js';
 import { descartarUploads } from '../lib/associado.js';
+import { avisarEquipe } from '../lib/avisos.js';
 
 const router = express.Router();
 router.use(requireAssociado, requireAssociadoAtivo);
@@ -149,6 +150,7 @@ router.post('/', requireAssociadoRegular, uploadFotoAnuncio.array('fotos', 12), 
     }
     return r.insertId;
   }).catch(err => { descartarUploads(req); throw err; });
+  avisarEquipe('equipe_anuncio', 'Novo anúncio para moderar', [`${req.associado.nome} enviou o anúncio "${d.titulo}".`], '/admin/classificados');
   res.status(201).json({ id });
 });
 
@@ -187,6 +189,7 @@ router.put('/:id', requireAssociadoRegular, uploadFotoAnuncio.array('fotos', 12)
     }
   }).catch(err => { descartarUploads(req); throw err; });
   for (const f of fotos.filter(f => remover.includes(f.id))) removerArquivo(f.arquivo);
+  avisarEquipe('equipe_anuncio', 'Anúncio editado para moderar', [`${req.associado.nome} editou o anúncio "${d.titulo}".`], '/admin/classificados');
   res.json({ ok: true });
 });
 

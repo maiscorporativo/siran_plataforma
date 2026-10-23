@@ -60,7 +60,7 @@ export default function AdmComunicados() {
 function FormComunicado({ id, onFechar, onSalvo }: { id: number | null; onFechar: () => void; onSalvo: () => void }) {
   const { dados: existente, carregando } = useApi<Comunicado & { arquivo: string | null }>(id ? `/admin/comunicados/${id}` : null)
   const [d, setD] = useState<Record<string, string> | null>(null)
-  const [flags, setFlags] = useState({ destaque: false, publicado: true })
+  const [flags, setFlags] = useState({ destaque: false, publicado: true, avisar_associados: false })
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [removerArquivo, setRemoverArquivo] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -76,7 +76,7 @@ function FormComunicado({ id, onFechar, onSalvo }: { id: number | null; onFechar
       resumo: existente?.resumo || '', conteudo: existente?.conteudo || '',
       data_publicacao: existente?.data_publicacao?.slice(0, 10) || `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`,
     })
-    if (existente) setFlags({ destaque: !!existente.destaque, publicado: !!existente.publicado })
+    if (existente) setFlags({ destaque: !!existente.destaque, publicado: !!existente.publicado, avisar_associados: false })
   }
 
   const set = (k: string, v: string) => setD(x => ({ ...x!, [k]: v }))
@@ -147,6 +147,10 @@ function FormComunicado({ id, onFechar, onSalvo }: { id: number | null; onFechar
           <div className="grid gap-x-4 sm:grid-cols-2">
             <Marcador rotulo="Publicado" descricao="Desmarque para salvar como rascunho" checked={flags.publicado} onChange={v => setFlags(f => ({ ...f, publicado: v }))} />
             <Marcador rotulo="Destaque" descricao="Fica no topo do painel do associado" checked={flags.destaque} onChange={v => setFlags(f => ({ ...f, destaque: v }))} />
+            {flags.publicado && (
+              <Marcador rotulo="Avisar os associados por WhatsApp e e-mail" descricao="Envia aos associados ativos, um de cada vez. Quem já recebeu este aviso não recebe de novo."
+                checked={flags.avisar_associados} onChange={v => setFlags(f => ({ ...f, avisar_associados: v }))} />
+            )}
           </div>
           {erro && <Aviso tom="vermelho">{erro}</Aviso>}
         </form>

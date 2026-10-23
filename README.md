@@ -17,7 +17,9 @@ Sistema web do Sindicato Rural da Alta Noroeste (Araçatuba-SP) para associados 
 - **Guia de conveniados** (parceiros que não são associados), com filtros por categoria, cidade atendida, 24 horas, entrega na zona rural e atendimento na propriedade.
 - **Boletos**: a equipe envia os PDFs gerados no banco, um a um ou **em lote**. No lote, o associado é identificado pelo CPF/CNPJ ou pela matrícula no nome do arquivo. A baixa é manual ou por **planilha CSV**.
 - **Ofícios e comunicados** da FAESP, do SENAR, da CNA e do SIRAN, com PDF anexo e controle de leitura.
-- **Importação** dos associados atuais por planilha CSV. O acesso deles é liberado por senha provisória.
+- **Importação** dos associados atuais por planilha CSV.
+- **Recuperação de senha e primeiro acesso** pelo próprio associado: ele informa o CPF/CNPJ e recebe um link por WhatsApp e/ou e-mail. A equipe também pode enviar o link de acesso pela ficha, ou gerar uma senha provisória como alternativa.
+- **Avisos automáticos** (e-mail via SMTP e WhatsApp via Evolution API): filiação aprovada ou recusada, recredenciamento analisado, anúncio aprovado ou reprovado, boleto disponível, lembretes de boleto e de vencimento do credenciamento, e novos comunicados (só quando a equipe marca "avisar associados"). A equipe recebe alertas de pedidos novos. O WhatsApp sai numa fila com intervalo entre mensagens, e tudo fica registrado em Configurações → Envios automáticos.
 
 ## Arquitetura
 
@@ -46,6 +48,8 @@ npm run dev:all           # frontend em http://localhost:3020 + API em :3002
    - `NODE_ENV=production`
    - `STORAGE_DIR=<caminho da pasta do passo 2>`
    - `ADMIN_MASTER_EMAIL` e `ADMIN_MASTER_PASSWORD`: usados só no primeiro start, para criar o usuário master. A troca de senha é exigida no primeiro login.
+   - `APP_URL` (endereço público, ex.: `https://associado.siran.com.br`) e `TZ=America/Sao_Paulo`.
+   - Opcionais, para os envios automáticos: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `EVOLUTION_API_URL`, `EVOLUTION_API_KEY` e `EVOLUTION_INSTANCE`. Sem eles, o sistema funciona normalmente, só não envia mensagens.
 4. **Build**: `npm install && npm run build`. Arquivo de entrada: `server.js`.
 5. Ao iniciar, o servidor cria as tabelas automaticamente. Confira em `/api/health`.
 
@@ -58,7 +62,8 @@ npm run dev:all           # frontend em http://localhost:3020 + API em :3002
 3. **Equipe**: criar os acessos dos funcionários.
 4. **Associados → Importar planilha**: carga dos associados atuais.
 5. **Conveniados**: cadastrar os parceiros.
-6. Para liberar o acesso de cada associado: ficha → **Liberar acesso**. A senha provisória pode ser enviada pelo WhatsApp com um clique.
+6. Para liberar o acesso de cada associado: ficha → **Enviar link de acesso**. Com WhatsApp ou e-mail cadastrado, o associado também consegue sozinho, em "Primeiro acesso ou esqueci a senha". Sem contato cadastrado, use **Senha provisória**.
+7. Em **Configurações → Envios automáticos**, use **Testar conexão** e envie uma mensagem de teste.
 
 ## Formatos de planilha (CSV separado por `;`)
 

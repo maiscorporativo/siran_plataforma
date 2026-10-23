@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Ban, CheckCircle2, Copy, FileText, KeyRound, MessageCircle, Receipt, RotateCcw, Save, Trash2, Upload, UserX, XCircle } from 'lucide-react'
+import { Ban, CheckCircle2, Copy, FileText, KeyRound, MessageCircle, Receipt, RotateCcw, Save, Send, Trash2, Upload, UserX, XCircle } from 'lucide-react'
 import { abrirArquivo, api, formData } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { competencia, data, dataHora, linkWhatsapp, mascaraDocumento, moeda, tamanhoArquivo } from '../../lib/format'
@@ -98,6 +98,15 @@ export default function AssociadoFicha() {
     } catch (err) { toast((err as Error).message, 'erro') }
   }
 
+  async function enviarAcesso() {
+    if (!(await confirmar('Enviar link de acesso', 'O associado recebe por WhatsApp e/ou e-mail um link (válido por 3 dias) para criar a própria senha.', 'Enviar'))) return
+    try {
+      const r = await api<{ email: string | null; whatsapp: string | null }>(`/admin/associados/${a.id}/enviar-acesso`, { method: 'POST' })
+      toast(`Link enviado para ${[r.whatsapp && `WhatsApp ${r.whatsapp}`, r.email && `e-mail ${r.email}`].filter(Boolean).join(' e ')}.`)
+      recarregar()
+    } catch (err) { toast((err as Error).message, 'erro') }
+  }
+
   async function enviarDocs() {
     const f = formData({})
     anexarDocumentos(f, novosDocs)
@@ -128,13 +137,14 @@ export default function AssociadoFicha() {
           </>}
           {a.status === 'ativo' && <Botao variante="secundario" icone={<Ban className="size-4" />} onClick={() => setModalStatus('suspenso')}>Suspender</Botao>}
           {['suspenso', 'inativo', 'recusado'].includes(a.status) && <Botao variante="secundario" icone={<RotateCcw className="size-4" />} onClick={reativar}>Reativar</Botao>}
-          <Botao variante="secundario" icone={<KeyRound className="size-4" />} onClick={gerarSenha}>{a.tem_senha ? 'Redefinir senha' : 'Liberar acesso'}</Botao>
+          {a.status !== 'recusado' && a.status !== 'inativo' && <Botao variante="secundario" icone={<Send className="size-4" />} onClick={enviarAcesso}>Enviar link de acesso</Botao>}
+          <Botao variante="secundario" icone={<KeyRound className="size-4" />} onClick={gerarSenha}>Senha provisória</Botao>
         </>} />
 
       {a.motivo_status && a.status !== 'ativo' && <div className="mb-5"><Aviso tom="amarelo" titulo="Motivo registrado">{a.motivo_status}</Aviso></div>}
       {a.status === 'ativo' && !a.tem_senha && (
         <div className="mb-5"><Aviso tom="azul" titulo="Este associado ainda não tem acesso à plataforma"
-          acao={<Botao tamanho="sm" onClick={gerarSenha}>Gerar senha provisória</Botao>}>Gere uma senha provisória e envie para ele pelo WhatsApp.</Aviso></div>
+          acao={<Botao tamanho="sm" onClick={enviarAcesso} icone={<Send className="size-4" />}>Enviar link de acesso</Botao>}>Envie o link para ele criar a própria senha, ou gere uma senha provisória.</Aviso></div>
       )}
 
       <div className="grid gap-6 xl:grid-cols-3">

@@ -245,3 +245,31 @@ CREATE TABLE IF NOT EXISTS log_acoes (
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_ent (entidade, entidade_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Links de redefinição de senha (guardamos só o hash do token)
+CREATE TABLE IF NOT EXISTS senha_tokens (
+  token_hash  CHAR(64) NOT NULL PRIMARY KEY,
+  tipo        ENUM('associado','admin') NOT NULL,
+  usuario_id  INT NOT NULL,
+  expires_at  DATETIME NOT NULL,
+  usado_em    DATETIME NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_usuario (tipo, usuario_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Registro de cada e-mail/WhatsApp enviado. "chave" evita repetir lembretes automáticos.
+CREATE TABLE IF NOT EXISTS notificacoes_log (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  associado_id  INT NULL,
+  evento        VARCHAR(40) NOT NULL,
+  canal         ENUM('email','whatsapp') NOT NULL,
+  destino       VARCHAR(160) NOT NULL,
+  status        ENUM('pendente','enviado','falha') NOT NULL DEFAULT 'pendente',
+  erro          VARCHAR(500) NULL,
+  chave         VARCHAR(120) NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  enviado_em    DATETIME NULL,
+  UNIQUE KEY uk_chave_canal (chave, canal),
+  INDEX idx_assoc (associado_id),
+  INDEX idx_data (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

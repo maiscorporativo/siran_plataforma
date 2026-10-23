@@ -4,6 +4,7 @@ import { uploadBoleto, uploadPlanilha, removerArquivo, enviarPrivado } from '../
 import { txt, dinheiro, dataISO, soDigitos, paginacao, like, lerCSV, registrarAcao } from '../../lib/util.js';
 import { descartarUploads } from '../../lib/associado.js';
 import { hojeISO } from '../../lib/auth.js';
+import { avisarBoletoDisponivel } from '../../lib/avisos.js';
 
 const router = express.Router();
 const COMPETENCIA = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -105,6 +106,7 @@ router.post('/', uploadBoleto.single('arquivo'), async (req, res) => {
       created_by: req.admin.id,
     }]);
     await registrarAcao(req.admin.id, 'lancar_boleto', 'associado', Number(b.associado_id), competencia);
+    if (b.avisar !== 'false') avisarBoletoDisponivel(r.insertId);
     res.status(201).json({ id: r.insertId });
   } catch (err) {
     descartarUploads(req);
@@ -141,11 +143,12 @@ router.post('/lote', uploadBoleto.array('arquivos', 500), async (req, res) => {
       removerArquivo(existente.arquivo, true);
       resultado.substituidos.push({ arquivo: f.originalname, nome: a.nome });
     } else {
-      await pool.query('INSERT INTO boletos SET ?', [{
+      const [ins] = await pool.query('INSERT INTO boletos SET ?', [{
         associado_id: a.id, competencia, vencimento, valor, arquivo: rel, created_by: req.admin.id,
         descricao: txt(b.descricao, 160) || `Mensalidade ${competencia.slice(5)}/${competencia.slice(0, 4)}`,
       }]);
       resultado.criados.push({ arquivo: f.originalname, nome: a.nome });
+      if (b.avisar !== 'false') avisarBoletoDisponivel(ins.insertId);
     }
   }
   await registrarAcao(req.admin.id, 'lote_boletos', 'boleto', null,

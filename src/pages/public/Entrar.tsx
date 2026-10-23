@@ -51,13 +51,14 @@ export default function Entrar() {
         <Botao type="submit" tamanho="lg" carregando={enviando} className="w-full" icone={<LogIn className="size-5" />}>Entrar</Botao>
       </form>
 
-      <div className="mt-6 space-y-2 text-sm text-stone-600">
+      <div className="mt-6 space-y-3 text-sm text-stone-600">
+        <Link to="/recuperar-senha" className="block font-medium text-siran-700 hover:underline">Primeiro acesso ou esqueci a senha</Link>
         <p>
-          Esqueceu a senha ou é seu primeiro acesso?{' '}
+          Precisa de ajuda?{' '}
           {whats
             ? <a href={whats} target="_blank" rel="noreferrer" className="font-medium text-siran-700 hover:underline">Fale com o sindicato</a>
             : 'Fale com o sindicato'}
-          {contato?.telefone && <> ou ligue {contato.telefone}</>} para receber uma senha provisória.
+          {contato?.telefone && <> ou ligue {contato.telefone}</>}.
         </p>
       </div>
 

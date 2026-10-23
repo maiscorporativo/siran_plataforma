@@ -9,6 +9,9 @@ import {
 import {
   lerCamposEditaveis, serializar, salvarDocumentos, descartarUploads, novoCodigoValidacao, proximaMatricula, TIPOS_DOCUMENTO,
 } from '../../lib/associado.js';
+import { avisarFiliacaoAprovada, avisarFiliacaoRecusada } from '../../lib/avisos.js';
+import { criarTokenSenha, mascararEmail, mascararTelefone } from '../../lib/senhas.js';
+import { notificar, destinoAssociado, statusCanais, link } from '../../lib/notificacoes.js';
 
 const router = express.Router();
 const STATUS = ['pendente', 'ativo', 'recusado', 'suspenso', 'inativo'];
@@ -208,6 +211,7 @@ router.post('/:id/aprovar', async (req, res) => {
     throw err;
   });
   await registrarAcao(req.admin.id, 'aprovar', 'associado', a.id);
+  avisarFiliacaoAprovada(a.id);
   res.json({ ok: true });
 });
 
@@ -223,6 +227,7 @@ router.post('/:id/status', async (req, res) => {
   await pool.query('UPDATE associados SET status = ?, motivo_status = ? WHERE id = ?', [status, status === 'ativo' ? null : motivo, a.id]);
   if (['recusado', 'inativo'].includes(status)) await encerrarSessoesDoUsuario('associado', a.id);
   await registrarAcao(req.admin.id, `status:${status}`, 'associado', a.id, motivo);
+  if (status === 'recusado') avisarFiliacaoRecusada(a.id, motivo);
   res.json({ ok: true });
 });
 
@@ -235,6 +240,31 @@ router.post('/:id/senha-provisoria', async (req, res) => {
   await encerrarSessoesDoUsuario('associado', Number(req.params.id));
   await registrarAcao(req.admin.id, 'senha_provisoria', 'associado', Number(req.params.id));
   res.json({ senha });
+});
+
+/* ── POST /api/admin/associados/:id/enviar-acesso — link para o associado criar a senha ── */
+router.post('/:id/enviar-acesso', async (req, res) => {
+  const [[a]] = await pool.query('SELECT * FROM associados WHERE id = ?', [req.params.id]);
+  if (!a) return res.status(404).json({ error: 'Associado não encontrado.' });
+  const canais = statusCanais();
+  if (!canais.app_url || (!canais.email && !canais.whatsapp)) {
+    return res.status(400).json({ error: 'Envio automático não configurado (SMTP/WhatsApp e APP_URL). Use a senha provisória.' });
+  }
+  if (!(canais.email && a.email) && !(canais.whatsapp && (a.whatsapp || a.telefone))) {
+    return res.status(400).json({ error: 'O associado não tem e-mail nem WhatsApp cadastrado.' });
+  }
+  const token = await criarTokenSenha('associado', a.id, 72);
+  const usados = await notificar({
+    evento: 'convite_acesso', para: destinoAssociado(a), essencial: true,
+    titulo: 'Seu acesso à Área do Associado SIRAN',
+    paragrafos: [
+      `Olá, ${a.nome.split(' ')[0]}! O SIRAN agora tem a Área do Associado: carteirinha digital, boletos, classificados, conveniados e comunicados oficiais.`,
+      'Toque no link abaixo para criar sua senha. Depois, é só entrar com seu CPF/CNPJ. O link vale por 3 dias.',
+    ],
+    botao: { texto: 'Criar minha senha', url: link(`/redefinir-senha?t=${token}`) },
+  });
+  await registrarAcao(req.admin.id, 'enviar_acesso', 'associado', a.id);
+  res.json({ email: mascararEmail(usados.email), whatsapp: mascararTelefone(usados.whatsapp) });
 });
 
 /* ── POST /api/admin/associados/:id/validade — prorrogação manual ── */

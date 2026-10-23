@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
 import { api } from '../../lib/api'
 import { useAdmin } from '../../lib/auth'
@@ -43,6 +43,7 @@ export default function AdminEntrar() {
           {erro && <Aviso tom="vermelho">{erro}</Aviso>}
           <Botao type="submit" className="w-full" carregando={enviando} icone={<ShieldCheck className="size-4" />}>Entrar</Botao>
         </form>
+        <Link to="/admin/recuperar-senha" className="mt-4 block text-center text-sm text-siran-700 hover:underline">Esqueci a senha</Link>
       </div>
     </div>
   )

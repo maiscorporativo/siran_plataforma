@@ -6,6 +6,7 @@ import { configuracoes, addDias } from '../lib/util.js';
 import {
   lerCamposEditaveis, serializar, salvarDocumentos, descartarUploads, TIPOS_DOCUMENTO, situacao,
 } from '../lib/associado.js';
+import { avisarEquipe } from '../lib/avisos.js';
 
 const router = express.Router();
 router.use(requireAssociado);
@@ -59,6 +60,10 @@ router.get('/inicio', async (req, res) => {
 /* ── PUT /api/associado/perfil — atualiza contato, endereço e propriedade ── */
 router.put('/perfil', async (req, res) => {
   const campos = lerCamposEditaveis(req.body);
+  // Preferência de receber avisos (recuperação de senha e respostas do sindicato sempre chegam)
+  for (const k of ['aceita_email', 'aceita_whatsapp']) {
+    if (req.body[k] !== undefined) campos[k] = req.body[k] === true || req.body[k] === 'true' || req.body[k] === 1 ? 1 : 0;
+  }
   if (Object.keys(campos).length) {
     await pool.query('UPDATE associados SET ? WHERE id = ?', [campos, req.associado.id]);
   }
@@ -159,6 +164,8 @@ router.post('/recredenciamento', requireAssociadoAtivo, uploadDocumento.array('d
     await salvarDocumentos(conn, a.id, req.files, req.body.tipos_documentos, id);
   }).catch(err => { descartarUploads(req); throw err; });
 
+  avisarEquipe('equipe_recredenciamento', 'Recredenciamento enviado',
+    [`${a.nome} (matrícula ${a.matricula}) enviou o recredenciamento para análise.`], '/admin/recredenciamentos');
   res.status(201).json({ ok: true });
 });
 

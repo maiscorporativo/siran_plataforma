@@ -3,6 +3,7 @@ import pool from '../../db.js';
 import { urlPublica, removerArquivo } from '../../lib/storage.js';
 import { txt, configuracoes, paginacao, like, registrarAcao } from '../../lib/util.js';
 import { EXPIRADO_SQL, statusExibido } from '../classificados.js';
+import { avisarAnuncioModerado } from '../../lib/avisos.js';
 
 const router = express.Router();
 
@@ -64,6 +65,7 @@ router.post('/:id/moderar', async (req, res) => {
     return res.status(400).json({ error: 'Decisão inválida.' });
   }
   await registrarAcao(req.admin.id, decisao, 'classificado', c.id, motivo);
+  avisarAnuncioModerado(c.id, decisao, motivo);
   res.json({ ok: true });
 });
 

@@ -32,6 +32,8 @@ export interface Associado {
   validade_ate: string | null
   codigo_validacao: string | null
   trocar_senha: number
+  aceita_email: number
+  aceita_whatsapp: number
   situacao: Situacao
   created_at: string
   observacoes?: string | null

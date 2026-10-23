@@ -4,7 +4,7 @@ import { abrirArquivo, api, formData } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { useAssociado } from '../../lib/auth'
 import { data, mascaraDocumento, tamanhoArquivo } from '../../lib/format'
-import { Aviso, Botao, Cabecalho, Cartao, Entrada, useConfirmacao, useToast } from '../../components/ui'
+import { Aviso, Botao, Cabecalho, Cartao, Entrada, Marcador, useConfirmacao, useToast } from '../../components/ui'
 import { CamposContato, CamposEndereco, CamposPropriedade, paraFormulario, soEditaveis, type Dados } from '../../components/CamposCadastro'
 import { EnvioDocumentos, TIPOS_DOCUMENTO, anexarDocumentos, type DocumentoNovo } from '../../components/EnvioDocumentos'
 import { FormTrocarSenha } from '../../components/TrocarSenha'
@@ -39,6 +39,16 @@ export default function MeuCadastro() {
       toast((err as Error).message, 'erro')
     } finally {
       setSalvando(false)
+    }
+  }
+
+  async function salvarPreferencia(campo: 'aceita_email' | 'aceita_whatsapp', valor: boolean) {
+    try {
+      const r = await api<{ associado: Associado }>('/associado/perfil', { method: 'PUT', body: { [campo]: valor } })
+      setUsuario(r.associado)
+      toast('Preferência salva.')
+    } catch (err) {
+      toast((err as Error).message, 'erro')
     }
   }
 
@@ -113,6 +123,14 @@ export default function MeuCadastro() {
         ) : <Aviso tom="amarelo">Nenhum documento enviado ainda.</Aviso>}
         <EnvioDocumentos lista={novos} onChange={setNovos} />
         {novos.length > 0 && <Botao onClick={enviarDocs} carregando={enviandoDocs} icone={<Upload className="size-4" />}>Enviar {novos.length} documento(s)</Botao>}
+      </Cartao>
+
+      <Cartao className="space-y-2 p-5">
+        <h2 className="font-semibold">Avisos do sindicato</h2>
+        <p className="text-sm text-stone-500">Boleto disponível, vencimento do credenciamento, anúncio aprovado e novos comunicados.</p>
+        <Marcador rotulo="Receber avisos pelo WhatsApp" checked={!!usuario.aceita_whatsapp} onChange={v => salvarPreferencia('aceita_whatsapp', v)} />
+        <Marcador rotulo="Receber avisos por e-mail" checked={!!usuario.aceita_email} onChange={v => salvarPreferencia('aceita_email', v)} />
+        <p className="text-xs text-stone-400">Links de recuperação de senha e respostas sobre sua filiação são enviados sempre.</p>
       </Cartao>
 
       <Cartao className="p-5">
