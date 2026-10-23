@@ -117,7 +117,9 @@ export async function migrate({ log = console.log } = {}) {
 }
 
 /* Uso direto: `npm run migrate` — cria o banco local se ainda não existir */
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+/* Sem await no topo do módulo: a Hostinger carrega o app com require(),
+   que não aceita módulos com top-level await. */
+async function executarPelaLinhaDeComando() {
   const name = process.env.DB_NAME || 'siran_plataforma';
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
@@ -130,4 +132,11 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   await migrate();
   console.log('✅ Migração concluída');
   await pool.end();
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  executarPelaLinhaDeComando().catch(err => {
+    console.error('❌ Migração falhou:', err.message);
+    process.exit(1);
+  });
 }

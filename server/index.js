@@ -72,15 +72,13 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-try {
-  await migrate();
-} catch (err) {
-  console.error('❌ Falha ao preparar o banco:', err.message);
-}
-
-agendarLembretes();
-
+/* Começa a atender na hora e prepara o banco em seguida. Sem await no topo:
+   a Hostinger carrega o app com require(), que não aceita top-level await. */
 app.listen(PORT, () => {
+  migrate()
+    .then(() => console.log('✅ Banco pronto'))
+    .catch(err => console.error('❌ Falha ao preparar o banco:', err.message));
+  agendarLembretes();
   const c = statusCanais();
   console.log(`   Envios:   e-mail ${c.email ? '✔' : '✘'} · WhatsApp ${c.whatsapp ? `✔ (${c.instancia})` : '✘'} · APP_URL ${c.app_url || '✘'}`);
   console.log(`\n🌱 SIRAN Plataforma rodando em http://localhost:${PORT}`);
