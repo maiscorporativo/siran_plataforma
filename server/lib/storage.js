@@ -16,7 +16,15 @@ export const storageDir = process.env.STORAGE_DIR
 export const publicoDir = path.join(storageDir, 'publico');
 export const privadoDir = path.join(storageDir, 'privado');
 
-for (const d of [publicoDir, privadoDir]) fs.mkdirSync(d, { recursive: true });
+/* Uma pasta inacessível não pode derrubar o servidor: registra o erro e
+   segue — os envios de arquivo falham com mensagem clara até corrigir STORAGE_DIR. */
+for (const d of [publicoDir, privadoDir]) {
+  try {
+    fs.mkdirSync(d, { recursive: true });
+  } catch (err) {
+    console.error(`❌ Não foi possível criar a pasta de arquivos ${d}: ${err.message}. Confira STORAGE_DIR.`);
+  }
+}
 
 const IMAGENS = ['image/jpeg', 'image/png', 'image/webp'];
 const DOCUMENTOS = [...IMAGENS, 'application/pdf'];
@@ -28,7 +36,6 @@ function nomeUnico(mime) {
 
 function criarUpload({ base, subpasta, tipos, maxMB }) {
   const destino = path.join(base, subpasta);
-  fs.mkdirSync(destino, { recursive: true });
   return multer({
     storage: multer.diskStorage({
       // Recria a pasta se tiver sido removida com o servidor no ar
