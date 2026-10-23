@@ -1,0 +1,18 @@
+node_modules
+dist
+*.log
+*.local
+
+# Variáveis de ambiente — NUNCA versionar
+.env
+.env.production
+
+# Arquivos enviados (documentos de associados, boletos, fotos) existem só no servidor
+storage/
+
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+deploy_hostinger.zip

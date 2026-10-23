@@ -1,0 +1,42 @@
+{
+  "name": "siran-plataforma",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:server": "nodemon server/index.js",
+    "dev:all": "concurrently -n \"VITE,API\" -c \"cyan,yellow\" \"vite\" \"nodemon server/index.js\"",
+    "build": "tsc -b && vite build",
+    "start": "NODE_ENV=production node server/index.js",
+    "migrate": "node server/migrate.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "@vitejs/plugin-react": "^5.1.1",
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.2",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "lucide-react": "^0.577.0",
+    "multer": "^2.1.1",
+    "mysql2": "^3.19.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.13.1",
+    "tailwindcss": "^4.2.1",
+    "vite": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "nodemon": "^3.1.14",
+    "typescript": "~5.9.3"
+  }
+}

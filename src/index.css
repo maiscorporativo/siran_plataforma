@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  /* Identidade SIRAN */
+  --color-siran-950: #082a1d;
+  --color-siran-900: #105037;
+  --color-siran-800: #1a5f40;
+  --color-siran-700: #2e6b45;
+  --color-siran-600: #3f8654;
+  --color-siran-500: #4f9a5f;
+  --color-siran-100: #e3f0e6;
+  --color-siran-50: #f2f8f3;
+  --color-lima-500: #689f17;
+  --color-lima-400: #7fbf1f;
+  --color-sol-400: #ffcc00;
+}
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; }
+  body { @apply bg-stone-50 text-stone-800 antialiased; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-siran-600; }
+}
+
+.campo {
+  @apply w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-[15px] text-stone-900
+    placeholder:text-stone-400 focus:border-siran-600 focus:outline-none focus:ring-2 focus:ring-siran-600/20
+    disabled:bg-stone-100 disabled:text-stone-500;
+}
