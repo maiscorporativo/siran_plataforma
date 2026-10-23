@@ -6,6 +6,11 @@ import { txt, configuracoes, limparCacheConfig, registrarAcao } from '../../lib/
 import { CONFIG_PADRAO } from '../../migrate.js';
 import { statusCanais, diagnosticar, enviarTeste } from '../../lib/notificacoes.js';
 import { enviarLembretes } from '../../lib/avisos.js';
+import fs from 'fs';
+import path from 'path';
+import multer from 'multer';
+import AdmZip from 'adm-zip';
+import { storageDir, publicoDir, privadoDir } from '../../lib/storage.js';
 import associados, { contarVencendo } from './associados.js';
 import recredenciamentos from './recredenciamentos.js';
 import classificados from './classificados.js';
@@ -98,6 +103,46 @@ router.post('/notificacoes/teste', requireMaster, async (req, res) => {
 
 router.post('/notificacoes/lembretes', requireMaster, async (_req, res) => {
   res.json({ enfileirados: await enviarLembretes() });
+});
+
+/* ── Armazenamento: onde os arquivos ficam e se dá para gravar ── */
+function contarArquivos(dir) {
+  try {
+    return fs.readdirSync(dir, { withFileTypes: true })
+      .reduce((n, e) => n + (e.isDirectory() ? contarArquivos(path.join(dir, e.name)) : 1), 0);
+  } catch { return 0; }
+}
+
+router.get('/armazenamento', requireMaster, (_req, res) => {
+  const gravavel = [publicoDir, privadoDir].every(d => {
+    const teste = path.join(d, `.teste-${Date.now()}`);
+    try { fs.mkdirSync(d, { recursive: true }); fs.writeFileSync(teste, 'ok'); fs.unlinkSync(teste); return true; } catch { return false; }
+  });
+  res.json({ pasta: storageDir, gravavel, arquivos: { publico: contarArquivos(publicoDir), privado: contarArquivos(privadoDir) } });
+});
+
+/* ── Pacote .zip com arquivos (ex.: fotos e PDFs da demonstração) ──
+   Aceita só caminhos publico|privado/<subpasta conhecida>/<arquivo>. */
+const SUBPASTAS = /^(publico\/(anuncios|conveniados)|privado\/(boletos|comunicados|documentos))\/[\w.-]+$/;
+const uploadPacote = multer({ storage: multer.memoryStorage(), limits: { fileSize: 60 * 1024 * 1024 } });
+
+router.post('/armazenamento/pacote', requireMaster, uploadPacote.single('pacote'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Envie o arquivo .zip.' });
+  let zip;
+  try { zip = new AdmZip(req.file.buffer); } catch { return res.status(400).json({ error: 'Arquivo .zip inválido.' }); }
+  let gravados = 0;
+  const ignorados = [];
+  for (const e of zip.getEntries()) {
+    if (e.isDirectory) continue;
+    const nome = e.entryName.replace(/\\/g, '/').replace(/^\.?\/+/, '');
+    if (!SUBPASTAS.test(nome) || nome.includes('..')) { ignorados.push(nome); continue; }
+    const destino = path.join(storageDir, nome);
+    fs.mkdirSync(path.dirname(destino), { recursive: true });
+    fs.writeFileSync(destino, e.getData());
+    gravados++;
+  }
+  registrarAcao(req.admin.id, 'pacote_arquivos', 'sistema', null, `${gravados} arquivos`);
+  res.json({ gravados, ignorados });
 });
 
 /* ── Usuários da equipe (somente master) ── */

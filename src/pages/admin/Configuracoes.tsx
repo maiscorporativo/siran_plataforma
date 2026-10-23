@@ -92,7 +92,68 @@ export default function Configuracoes() {
       </form>
 
       <PainelEnvios />
+      <PainelArmazenamento />
     </div>
+  )
+}
+
+/* Pasta de arquivos do servidor e envio de pacote .zip (ex.: fotos e PDFs da demonstração) */
+function PainelArmazenamento() {
+  const { dados, recarregar } = useApi<{ pasta: string; gravavel: boolean; arquivos: { publico: number; privado: number } }>('/admin/armazenamento')
+  const [arquivo, setArquivo] = useState<File | null>(null)
+  const [enviando, setEnviando] = useState(false)
+  const [resultado, setResultado] = useState<{ gravados: number; ignorados: string[] } | null>(null)
+  const toast = useToast()
+
+  async function enviar() {
+    if (!arquivo) return
+    setEnviando(true)
+    try {
+      const f = new FormData()
+      f.append('pacote', arquivo)
+      setResultado(await api('/admin/armazenamento/pacote', { method: 'POST', form: f }))
+      setArquivo(null)
+      recarregar()
+    } catch (err) {
+      toast((err as Error).message, 'erro')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <Cartao className="space-y-4 p-5">
+      <h2 className="font-semibold">Armazenamento de arquivos</h2>
+      {!dados ? <Carregando /> : (
+        <>
+          <div className="flex items-start gap-3 rounded-xl border border-stone-200 p-4 text-sm">
+            {dados.gravavel ? <CheckCircle2 className="size-5 shrink-0 text-siran-600" /> : <XCircle className="size-5 shrink-0 text-red-600" />}
+            <div className="min-w-0">
+              <p className="font-medium">{dados.gravavel ? 'Pasta funcionando' : 'O sistema não consegue gravar nesta pasta'}</p>
+              <p className="break-all font-mono text-xs text-stone-500">{dados.pasta}</p>
+              <p className="mt-1 text-stone-500">{dados.arquivos.publico} arquivo(s) públicos (fotos, logos) · {dados.arquivos.privado} privado(s) (documentos, boletos, ofícios)</p>
+            </div>
+          </div>
+          {!dados.gravavel && <Aviso tom="vermelho">Confira a variável STORAGE_DIR no painel da Hostinger. Sem uma pasta gravável, fotos, documentos e boletos não podem ser enviados.</Aviso>}
+          <div className="rounded-xl bg-stone-50 p-4 text-sm">
+            <p className="font-medium">Enviar pacote de arquivos (.zip)</p>
+            <p className="mt-1 text-stone-500">Usado para instalar as fotos, logos e PDFs da demonstração (siran_storage_demo.zip). O sistema extrai o pacote direto na pasta acima.</p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <input type="file" accept=".zip,application/zip" onChange={e => { setArquivo(e.target.files?.[0] || null); setResultado(null) }}
+                className="block text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-siran-100 file:px-4 file:py-2 file:font-medium file:text-siran-900" />
+              <Botao onClick={enviar} disabled={!arquivo || !dados.gravavel} carregando={enviando} icone={<Send className="size-4" />}>Enviar e extrair</Botao>
+            </div>
+            {resultado && (
+              <div className="mt-3">
+                <Aviso tom="verde" titulo={`${resultado.gravados} arquivo(s) instalado(s)`}>
+                  {resultado.ignorados.length > 0 && <>Ignorados (fora das pastas do sistema): {resultado.ignorados.join(', ')}</>}
+                </Aviso>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </Cartao>
   )
 }
 
