@@ -16,3 +16,6 @@ storage/
 .DS_Store
 
 deploy_hostinger.zip
+
+# Dados de demonstração (importação manual pelo phpMyAdmin)
+demo/
