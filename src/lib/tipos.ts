@@ -169,3 +169,149 @@ export const TIPO_COMUNICADO: Record<string, string> = {
 export const ORIGEM_COMUNICADO: Record<string, string> = {
   FAESP: 'FAESP', SENAR: 'SENAR', CNA: 'CNA', SIRAN: 'SIRAN', OUTROS: 'Outros',
 }
+
+/* ═══════════════ Cursos e eventos ═══════════════ */
+export interface Curso {
+  id: number
+  tipo: 'curso' | 'evento'
+  titulo: string
+  resumo: string | null
+  descricao?: string | null
+  categoria: string | null
+  realizacao: string | null
+  instrutor: string | null
+  cidade: string | null
+  local: string | null
+  data_inicio: string
+  data_fim: string | null
+  horario: string | null
+  carga_horaria: number | null
+  vagas: number | null
+  publico: 'todos' | 'associados'
+  inscricoes_ate: string | null
+  imagem: string | null
+  status: 'rascunho' | 'publicado' | 'cancelado'
+  confirmadas: number
+  em_espera: number
+  vagas_restantes: number | null
+  inscricoes_abertas: boolean
+  lotado: boolean
+  situacao: 'aberto' | 'inscricoes_encerradas' | 'em_andamento' | 'encerrado' | 'cancelado'
+  minha_inscricao?: string | { status: string; codigo: string } | null
+}
+
+export interface Inscricao {
+  id: number
+  nome: string
+  cpf: string
+  telefone: string | null
+  email: string | null
+  cidade: string | null
+  status: 'confirmada' | 'espera' | 'cancelada'
+  presente: number | null
+  created_at: string
+  associado_id: number | null
+  matricula: string | null
+}
+
+/* ═══════════════ Vagas de emprego e estágio ═══════════════ */
+export interface Conta {
+  id: number
+  tipo_conta: 'empresa' | 'instituicao' | 'candidato'
+  nome: string
+  email: string
+  whatsapp: string | null
+  cidade: string | null
+  uf: string | null
+  status?: 'pendente' | 'ativa' | 'recusada' | 'suspensa'
+  motivo_status?: string | null
+  // organização
+  cnpj?: string | null
+  responsavel?: string | null
+  cargo?: string | null
+  telefone?: string | null
+  site?: string | null
+  descricao?: string | null
+  // candidato
+  cpf?: string
+  data_nascimento?: string | null
+  escolaridade?: string | null
+  areas_interesse?: string | null
+  resumo?: string | null
+  experiencias?: string | null
+  cnh?: string | null
+  disponibilidade?: string | null
+  curriculo_arquivo?: string | null
+  estudante?: number
+  instituicao_id?: number | null
+  curso?: string | null
+  periodo?: string | null
+  matricula?: string | null
+  previsao_conclusao?: string | null
+  vinculo_status?: 'nao_informado' | 'pendente' | 'confirmado' | 'recusado'
+  aceita_whatsapp?: number
+  aceita_email?: number
+}
+
+export interface Vaga {
+  id: number
+  tipo: 'emprego' | 'estagio' | 'temporario'
+  titulo: string
+  area: string | null
+  descricao: string
+  requisitos: string | null
+  beneficios: string | null
+  remuneracao: string | null
+  jornada: string | null
+  quantidade: number
+  cidade: string | null
+  uf: string | null
+  estagio_nivel: 'medio_tecnico' | 'superior' | 'ambos' | null
+  estagio_cursos: string | null
+  exibir_nome: number
+  status: 'pendente' | 'aprovada' | 'reprovada' | 'pausada' | 'encerrada'
+  status_exibido?: string
+  motivo_reprovacao?: string | null
+  publicado_em: string | null
+  expira_em: string | null
+  created_at: string
+  updated_at?: string
+  ofertante?: string
+  ofertante_nome?: string
+  ofertante_tipo?: 'associado' | 'empresa'
+  candidaturas?: number
+}
+
+export interface Candidatura {
+  id: number
+  status: 'enviada' | 'em_analise' | 'entrevista' | 'aprovada' | 'nao_selecionada' | 'desistiu'
+  mensagem: string | null
+  created_at: string
+  candidato_id: number
+  nome: string
+  cidade: string | null
+  uf: string | null
+  data_nascimento: string | null
+  escolaridade: string | null
+  areas_interesse: string | null
+  resumo: string | null
+  experiencias: string | null
+  cnh: string | null
+  disponibilidade: string | null
+  tem_curriculo: number
+  estudante: number
+  curso: string | null
+  periodo: string | null
+  previsao_conclusao: string | null
+  vinculo_status: string
+  instituicao: string | null
+  whatsapp: string | null
+  email: string | null
+}
+
+export const TIPO_VAGA: Record<string, string> = { emprego: 'Emprego', estagio: 'Estágio', temporario: 'Temporário / safra' }
+export const NIVEL_ESTAGIO: Record<string, string> = { medio_tecnico: 'Ensino médio / técnico', superior: 'Ensino superior', ambos: 'Médio, técnico ou superior' }
+export const ESCOLARIDADE: Record<string, string> = { fundamental: 'Ensino fundamental', medio: 'Ensino médio', tecnico: 'Técnico', superior: 'Superior', pos: 'Pós-graduação' }
+export const STATUS_CANDIDATURA: Record<string, string> = {
+  enviada: 'Enviada', em_analise: 'Em análise', entrevista: 'Chamado para entrevista', aprovada: 'Selecionado', nao_selecionada: 'Não selecionado', desistiu: 'Desistiu',
+}

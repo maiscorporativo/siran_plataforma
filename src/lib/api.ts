@@ -1,8 +1,18 @@
-/* Cliente da API. Associado e equipe têm sessões separadas no navegador. */
+/* Cliente da API. Cada perfil (associado, equipe, empresa, instituição, candidato)
+   tem sua própria sessão no navegador. */
 
-export type Area = 'associado' | 'admin'
+export type Area = 'associado' | 'admin' | 'empresa' | 'instituicao' | 'candidato'
 
-const CHAVE: Record<Area, string> = { associado: 'siran_token', admin: 'siran_admin_token' }
+const CHAVE: Record<Area, string> = {
+  associado: 'siran_token', admin: 'siran_admin_token',
+  empresa: 'siran_empresa_token', instituicao: 'siran_instituicao_token', candidato: 'siran_candidato_token',
+}
+
+/* Perfil deduzido pelo caminho da API (rotas compartilhadas, como /ofertante, informam a área) */
+function areaDoCaminho(path: string): Area {
+  const m = path.match(/^\/(admin|empresa|instituicao|candidato)\b/) || path.match(/^\/contas\/(empresa|instituicao|candidato)\//)
+  return (m?.[1] as Area) || 'associado'
+}
 
 export const tokens = {
   get(area: Area) {
@@ -32,7 +42,7 @@ type Opcoes = {
 }
 
 async function requisicao(path: string, { method = 'GET', body, form, area }: Opcoes = {}) {
-  const alvo = area ?? (path.startsWith('/admin') ? 'admin' : 'associado')
+  const alvo = area ?? areaDoCaminho(path)
   const headers: Record<string, string> = {}
   const token = tokens.get(alvo)
   if (token) headers.Authorization = `Bearer ${token}`

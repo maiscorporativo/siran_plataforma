@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { AlertTriangle, ArrowRight, MapPinned, Receipt, RefreshCw, Store, UserPlus, Users } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Briefcase, Building2, CalendarDays, MapPinned, Receipt, RefreshCw, Store, UserPlus, UserSearch, Users } from 'lucide-react'
 import { useApi } from '../../lib/useApi'
 import { useAdmin } from '../../lib/auth'
 import { dataHora, moeda } from '../../lib/format'
@@ -11,6 +11,8 @@ type Painel = {
   anuncios_pendentes: number
   anuncios_publicados: number
   conveniados: number
+  vagas: { pendentes: number; publicadas: number; empresas_pendentes: number; candidatos: number }
+  cursos: { proximos: number; inscritos: number }
   financeiro: { boletos_vencidos: number; inadimplentes: number; recebido_mes: number }
   cadastros_recentes: { id: number; nome: string; cidade: string | null; created_at: string }[]
 }
@@ -30,6 +32,8 @@ export default function Painel() {
     { n: p.associados.pendentes, rotulo: 'pedidos de filiação para analisar', to: '/admin/associados?status=pendente', icone: UserPlus },
     { n: p.recredenciamentos_pendentes, rotulo: 'recredenciamentos aguardando análise', to: '/admin/recredenciamentos', icone: RefreshCw },
     { n: p.anuncios_pendentes, rotulo: 'anúncios aguardando moderação', to: '/admin/classificados', icone: Store },
+    { n: p.vagas.pendentes, rotulo: 'vagas de emprego/estágio para moderar', to: '/admin/vagas', icone: Briefcase },
+    { n: p.vagas.empresas_pendentes, rotulo: 'empresas aguardando aprovação', to: '/admin/organizacoes', icone: Building2 },
   ]
 
   const numeros = [
@@ -40,6 +44,9 @@ export default function Painel() {
     { rotulo: 'Recebido no mês', valor: moeda(p.financeiro.recebido_mes), to: '/admin/boletos?status=pago', icone: Receipt },
     { rotulo: 'Anúncios publicados', valor: p.anuncios_publicados, to: '/admin/classificados?status=aprovado', icone: Store },
     { rotulo: 'Conveniados ativos', valor: p.conveniados, to: '/admin/conveniados', icone: MapPinned },
+    { rotulo: `Inscritos em ${p.cursos.proximos} curso(s)`, valor: p.cursos.inscritos, to: '/admin/cursos', icone: CalendarDays },
+    { rotulo: 'Vagas publicadas', valor: p.vagas.publicadas, to: '/admin/vagas?status=aprovada', icone: Briefcase },
+    { rotulo: 'Currículos cadastrados', valor: p.vagas.candidatos, to: '/admin/candidatos', icone: UserSearch },
   ]
 
   return (
@@ -47,7 +54,7 @@ export default function Painel() {
       <Cabecalho titulo={`${saudacao()}, ${usuario?.nome.split(' ')[0]}`} descricao="Resumo das pendências e números do sindicato." />
 
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-stone-500">Pendências</h2>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {pendencias.map(x => (
           <Link key={x.to} to={x.to} className={cx('flex items-center gap-4 rounded-2xl border p-5 transition',
             x.n > 0 ? 'border-amber-300 bg-amber-50 hover:border-amber-400' : 'border-stone-200 bg-white hover:border-siran-600')}>

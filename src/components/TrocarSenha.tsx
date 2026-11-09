@@ -19,7 +19,8 @@ export function FormTrocarSenha({ area, obrigatoria, onConcluir }: { area: Area;
     if (nova !== confirma) return setErro('A confirmação não confere com a nova senha.')
     setEnviando(true)
     try {
-      await api(area === 'admin' ? '/auth/admin/trocar-senha' : '/auth/trocar-senha', { method: 'POST', area, body: { senha_atual: atual, nova_senha: nova } })
+      const rota = area === 'admin' ? '/auth/admin/trocar-senha' : area === 'associado' ? '/auth/trocar-senha' : `/contas/${area}/trocar-senha`
+      await api(rota, { method: 'POST', area, body: { senha_atual: atual, nova_senha: nova } })
       toast('Senha alterada com sucesso.')
       setAtual(''); setNova(''); setConfirma('')
       onConcluir()

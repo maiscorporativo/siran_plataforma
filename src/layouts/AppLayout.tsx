@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Home, Store, MapPinned, Receipt, Megaphone, IdCard, UserRound, RefreshCw, LogOut, Menu, X, MessageCircle,
+  Home, Store, MapPinned, Receipt, Megaphone, IdCard, UserRound, RefreshCw, LogOut, Menu, X, MessageCircle, CalendarDays, Briefcase,
 } from 'lucide-react'
 import { useAssociado } from '../lib/auth'
 import { Carregando, cx } from '../components/ui'
@@ -16,6 +16,8 @@ const ITENS: Item[] = [
   { to: '/app', rotulo: 'Início', icone: Home, fim: true },
   { to: '/app/classificados', rotulo: 'Classificados', icone: Store, soAtivo: true },
   { to: '/app/conveniados', rotulo: 'Conveniados', icone: MapPinned, soAtivo: true },
+  { to: '/app/cursos', rotulo: 'Cursos e eventos', icone: CalendarDays, soAtivo: true },
+  { to: '/app/vagas', rotulo: 'Vagas de emprego', icone: Briefcase, soAtivo: true },
   { to: '/app/boletos', rotulo: 'Boletos', icone: Receipt },
   { to: '/app/comunicados', rotulo: 'Ofícios e comunicados', icone: Megaphone, soAtivo: true },
   { to: '/app/carteirinha', rotulo: 'Carteirinha', icone: IdCard, soAtivo: true },

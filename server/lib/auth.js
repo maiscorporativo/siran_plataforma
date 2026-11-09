@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import pool from '../db.js';
 
-const DURACAO_HORAS = { associado: 24 * 30, admin: 12 };
+const DURACAO_HORAS = { associado: 24 * 30, admin: 12, empresa: 24 * 30, instituicao: 24 * 7, candidato: 24 * 30 };
 
 export async function criarSessao(tipo, usuarioId) {
   const token = crypto.randomBytes(32).toString('hex');
@@ -101,15 +101,89 @@ export function requireMaster(req, res, next) {
   next();
 }
 
+/* ── Empresa parceira ou instituição de ensino (tabela organizacoes) ── */
+export function requireOrganizacao(tipo) {
+  return async (req, res, next) => {
+    try {
+      const sessao = await sessaoValida(req, tipo);
+      if (!sessao) return res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
+      const [[o]] = await pool.query('SELECT * FROM organizacoes WHERE id = ? AND tipo = ? LIMIT 1', [sessao.usuario_id, tipo]);
+      if (!o || ['recusada', 'suspensa'].includes(o.status)) return res.status(401).json({ error: 'Acesso não permitido.' });
+      req.organizacao = o;
+      req.token = sessao.token;
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+/* ── Candidato a vagas de emprego e estágio ── */
+export async function requireCandidato(req, res, next) {
+  try {
+    const sessao = await sessaoValida(req, 'candidato');
+    if (!sessao) return res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
+    const [[c]] = await pool.query('SELECT * FROM candidatos WHERE id = ? LIMIT 1', [sessao.usuario_id]);
+    if (!c) return res.status(401).json({ error: 'Acesso não permitido.' });
+    req.candidato = c;
+    req.token = sessao.token;
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* ── Quem publica vagas: associado em dia ou empresa parceira aprovada ──
+   Define req.ofertante = { tipo, id, nome }. */
+export async function requireOfertante(req, res, next) {
+  try {
+    const assoc = await sessaoValida(req, 'associado');
+    if (assoc) {
+      const [[a]] = await pool.query('SELECT * FROM associados WHERE id = ?', [assoc.usuario_id]);
+      if (!a || a.status !== 'ativo') return res.status(403).json({ error: 'Só associados ativos podem publicar vagas.' });
+      req.associado = a;
+      req.ofertante = { tipo: 'associado', id: a.id, nome: a.nome, cidade: a.cidade, uf: a.uf };
+      return next();
+    }
+    const emp = await sessaoValida(req, 'empresa');
+    if (emp) {
+      const [[o]] = await pool.query("SELECT * FROM organizacoes WHERE id = ? AND tipo = 'empresa'", [emp.usuario_id]);
+      if (!o || o.status !== 'ativa') {
+        return res.status(403).json({ error: o?.status === 'pendente' ? 'Seu cadastro ainda está em análise pelo SIRAN.' : 'Acesso não permitido.' });
+      }
+      req.organizacao = o;
+      req.ofertante = { tipo: 'empresa', id: o.id, nome: o.nome, cidade: o.cidade, uf: o.uf };
+      return next();
+    }
+    res.status(401).json({ error: 'Sessão expirada. Entre novamente.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* Associado logado, se houver (rotas públicas que se adaptam a quem está logado) */
+export async function associadoOpcional(req, _res, next) {
+  try {
+    const s = await sessaoValida(req, 'associado');
+    if (s) {
+      const [[a]] = await pool.query('SELECT * FROM associados WHERE id = ?', [s.usuario_id]);
+      if (a && !['recusado', 'inativo'].includes(a.status)) req.associado = a;
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
 /* ── Limite simples de tentativas de login (memória do processo) ── */
 const tentativas = new Map();
 const JANELA_MS = 15 * 60 * 1000;
 const MAX_TENTATIVAS = 8;
 
-export function limiteLogin(chave) {
+export function limiteLogin(chave, max = MAX_TENTATIVAS) {
   const agora = Date.now();
   const reg = tentativas.get(chave);
-  if (reg && agora - reg.inicio < JANELA_MS && reg.n >= MAX_TENTATIVAS) return false;
+  if (reg && agora - reg.inicio < JANELA_MS && reg.n >= max) return false;
   return true;
 }
 

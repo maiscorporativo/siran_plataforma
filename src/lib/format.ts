@@ -95,3 +95,12 @@ export function tamanhoArquivo(bytes: number | null | undefined) {
 }
 
 export const UFS = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO']
+
+export function idade(nascimento: string | null | undefined) {
+  if (!nascimento) return null
+  const [a, m, d] = nascimento.slice(0, 10).split('-').map(Number)
+  const hoje = new Date()
+  let anos = hoje.getFullYear() - a
+  if (hoje.getMonth() + 1 < m || (hoje.getMonth() + 1 === m && hoje.getDate() < d)) anos--
+  return anos
+}

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, RefreshCw, Store, MapPinned, Receipt, Megaphone, Tags, ShieldCheck, Settings, LogOut, Menu, X, KeyRound,
+  LayoutDashboard, Users, RefreshCw, Store, MapPinned, Receipt, Megaphone, Tags, ShieldCheck, Settings, LogOut, Menu, X, KeyRound, CalendarDays, Briefcase, Building2, UserSearch,
 } from 'lucide-react'
 import { useAdmin } from '../lib/auth'
 import { useApi } from '../lib/useApi'
 import { Carregando, Modal, cx } from '../components/ui'
 import { FormTrocarSenha } from '../components/TrocarSenha'
 
-type Painel = { associados: { pendentes: number }; recredenciamentos_pendentes: number; anuncios_pendentes: number }
+type Painel = { associados: { pendentes: number }; recredenciamentos_pendentes: number; anuncios_pendentes: number; vagas: { pendentes: number; empresas_pendentes: number } }
 
 export default function AdminLayout() {
   const { usuario, carregando, sair, atualizar } = useAdmin()
@@ -40,6 +40,10 @@ export default function AdminLayout() {
     { to: '/admin/conveniados', rotulo: 'Conveniados', icone: MapPinned },
     { to: '/admin/boletos', rotulo: 'Boletos', icone: Receipt },
     { to: '/admin/comunicados', rotulo: 'Ofícios e comunicados', icone: Megaphone },
+    { to: '/admin/cursos', rotulo: 'Cursos e eventos', icone: CalendarDays },
+    { to: '/admin/vagas', rotulo: 'Vagas e estágios', icone: Briefcase, badge: contagem?.vagas?.pendentes },
+    { to: '/admin/organizacoes', rotulo: 'Empresas e escolas', icone: Building2, badge: contagem?.vagas?.empresas_pendentes },
+    { to: '/admin/candidatos', rotulo: 'Candidatos', icone: UserSearch },
     { to: '/admin/categorias', rotulo: 'Categorias', icone: Tags },
     ...(usuario.papel === 'master' ? [
       { to: '/admin/usuarios', rotulo: 'Equipe', icone: ShieldCheck },

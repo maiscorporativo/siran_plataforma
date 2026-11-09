@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api, tokens, type Area } from './api'
-import type { Admin, Associado } from './tipos'
+import type { Admin, Associado, Conta } from './tipos'
 
 type Sessao<U> = {
   usuario: U | null
@@ -59,3 +59,26 @@ function criarSessao<U>(area: Area, rotaMe: string, chave: string) {
 
 export const [AssociadoProvider, useAssociado] = criarSessao<Associado>('associado', '/auth/me', 'associado')
 export const [AdminProvider, useAdmin] = criarSessao<Admin>('admin', '/auth/admin/me', 'admin')
+export const [EmpresaProvider, useEmpresa] = criarSessao<Conta>('empresa', '/contas/empresa/me', 'conta')
+export const [InstituicaoProvider, useInstituicao] = criarSessao<Conta>('instituicao', '/contas/instituicao/me', 'conta')
+export const [CandidatoProvider, useCandidato] = criarSessao<Conta>('candidato', '/contas/candidato/me', 'conta')
+
+export type TipoConta = 'empresa' | 'instituicao' | 'candidato'
+
+/* Sessão de empresa, instituição ou candidato pelo tipo */
+export function useConta(tipo: TipoConta) {
+  const e = useEmpresa()
+  const i = useInstituicao()
+  const c = useCandidato()
+  return tipo === 'empresa' ? e : tipo === 'instituicao' ? i : c
+}
+
+export function ContasProvider({ children }: { children: ReactNode }) {
+  return (
+    <EmpresaProvider>
+      <InstituicaoProvider>
+        <CandidatoProvider>{children}</CandidatoProvider>
+      </InstituicaoProvider>
+    </EmpresaProvider>
+  )
+}

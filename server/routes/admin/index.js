@@ -18,9 +18,15 @@ import conveniados from './conveniados.js';
 import categorias from './categorias.js';
 import boletos from './boletos.js';
 import comunicados from './comunicados.js';
+import cursos from './cursos.js';
+import { vagas, organizacoes, candidatos } from './vagas.js';
 
 const router = express.Router();
 router.use(requireAdmin);
+router.use('/cursos', cursos);
+router.use('/vagas', vagas);
+router.use('/organizacoes', organizacoes);
+router.use('/candidatos', candidatos);
 
 router.use('/associados', associados);
 router.use('/recredenciamentos', recredenciamentos);
@@ -50,8 +56,18 @@ router.get('/painel', async (_req, res) => {
   const [pendentes] = await pool.query(
     "SELECT id, nome, cidade, created_at FROM associados WHERE status = 'pendente' ORDER BY created_at LIMIT 5");
   const aviso = Number(cfg.aviso_recredenciamento_dias) || 60;
+  const [[vg]] = await pool.query(
+    `SELECT SUM(status = 'pendente') AS pendentes, SUM(status = 'aprovada' AND (expira_em IS NULL OR expira_em > NOW())) AS publicadas,
+            (SELECT COUNT(*) FROM organizacoes WHERE tipo = 'empresa' AND status = 'pendente') AS empresas_pendentes,
+            (SELECT COUNT(*) FROM candidatos) AS candidatos
+       FROM vagas`);
+  const [[cr]] = await pool.query(
+    `SELECT COUNT(*) AS proximos, COALESCE(SUM((SELECT COUNT(*) FROM inscricoes i WHERE i.curso_id = c.id AND i.status = 'confirmada')), 0) AS inscritos
+       FROM cursos c WHERE c.status = 'publicado' AND COALESCE(c.data_fim, c.data_inicio) >= CURDATE()`);
 
   res.json({
+    vagas: { pendentes: Number(vg.pendentes) || 0, publicadas: Number(vg.publicadas) || 0, empresas_pendentes: Number(vg.empresas_pendentes) || 0, candidatos: Number(vg.candidatos) || 0 },
+    cursos: { proximos: Number(cr.proximos) || 0, inscritos: Number(cr.inscritos) || 0 },
     associados: {
       ativos: Number(assoc.ativos) || 0, pendentes: Number(assoc.pendentes) || 0,
       vencidos: Number(assoc.vencidos) || 0, suspensos: Number(assoc.suspensos) || 0,
@@ -123,7 +139,7 @@ router.get('/armazenamento', requireMaster, (_req, res) => {
 
 /* ── Pacote .zip com arquivos (ex.: fotos e PDFs da demonstração) ──
    Aceita só caminhos publico|privado/<subpasta conhecida>/<arquivo>. */
-const SUBPASTAS = /^(publico\/(anuncios|conveniados)|privado\/(boletos|comunicados|documentos))\/[\w.-]+$/;
+const SUBPASTAS = /^(publico\/(anuncios|conveniados|cursos)|privado\/(boletos|comunicados|documentos|curriculos))\/[\w.-]+$/;
 const uploadPacote = multer({ storage: multer.memoryStorage(), limits: { fileSize: 60 * 1024 * 1024 } });
 
 router.post('/armazenamento/pacote', requireMaster, uploadPacote.single('pacote'), (req, res) => {

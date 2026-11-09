@@ -55,6 +55,8 @@ export const uploadLogo         = criarUpload({ base: publicoDir, subpasta: 'con
 export const uploadDocumento    = criarUpload({ base: privadoDir, subpasta: 'documentos', tipos: DOCUMENTOS, maxMB: 10 });
 export const uploadBoleto       = criarUpload({ base: privadoDir, subpasta: 'boletos', tipos: ['application/pdf'], maxMB: 5 });
 export const uploadComunicado   = criarUpload({ base: privadoDir, subpasta: 'comunicados', tipos: ['application/pdf'], maxMB: 20 });
+export const uploadImagemCurso  = criarUpload({ base: publicoDir, subpasta: 'cursos', tipos: IMAGENS, maxMB: 6 });
+export const uploadCurriculo    = criarUpload({ base: privadoDir, subpasta: 'curriculos', tipos: ['application/pdf'], maxMB: 5 });
 export const uploadPlanilha     = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 /* Caminho relativo salvo no banco: "anuncios/123-abc.jpg" */

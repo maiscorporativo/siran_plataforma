@@ -47,6 +47,8 @@ export const CONFIG_PADRAO = {
   notif_equipe_emails: '',
   // Lembrete de boleto: quantos dias antes do vencimento
   lembrete_boleto_dias: '3',
+  // Vaga de emprego/estágio fica publicada por N dias
+  vaga_validade_dias: '45',
 };
 
 /* Colunas acrescentadas depois da primeira versão (bancos já existentes) */
@@ -69,6 +71,10 @@ function statements(sql) {
 export async function migrate({ log = console.log } = {}) {
   const sql = fs.readFileSync(join(__dirname, 'schema.sql'), 'utf8');
   for (const stmt of statements(sql)) await pool.query(stmt);
+  // Perfis de acesso criados depois da primeira versão (bancos já existentes)
+  const TIPOS_CONTA = "ENUM('associado','admin','empresa','instituicao','candidato') NOT NULL";
+  await pool.query(`ALTER TABLE sessoes MODIFY tipo ${TIPOS_CONTA}`);
+  await pool.query(`ALTER TABLE senha_tokens MODIFY tipo ${TIPOS_CONTA}`);
   for (const [tabela, coluna, def] of COLUNAS_NOVAS) {
     const [[{ c }]] = await pool.query(
       'SELECT COUNT(*) AS c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
